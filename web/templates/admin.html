@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DMR-ML - 管理后台</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v=2">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .admin-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 24px;
+            min-height: 100vh;
+            background: var(--bg);
+        }
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+        .admin-header h1 {
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: 28px;
+            color: var(--text);
+            margin: 0;
+        }
+        .admin-header .back-link {
+            color: var(--secondary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .admin-header .back-link:hover { text-decoration: underline; }
+
+        /* Login form */
+        .login-box {
+            max-width: 400px;
+            margin: 120px auto;
+            padding: 40px;
+            background: white;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+        }
+        .login-box h2 {
+            font-family: Georgia, 'Times New Roman', serif;
+            margin: 0 0 8px;
+            font-size: 22px;
+        }
+        .login-box p {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin: 0 0 24px;
+        }
+        .login-box input[type="password"] {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-size: 14px;
+            margin-bottom: 16px;
+            box-sizing: border-box;
+            font-family: Inter, sans-serif;
+        }
+        .login-box input:focus {
+            outline: none;
+            border-color: var(--secondary);
+        }
+        .login-box button {
+            width: 100%;
+            padding: 10px;
+            background: var(--secondary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            font-family: Inter, sans-serif;
+            transition: opacity 0.2s;
+        }
+        .login-box button:hover { opacity: 0.85; }
+        .login-error {
+            color: var(--danger);
+            font-size: 13px;
+            margin-top: 8px;
+            display: none;
+        }
+
+        /* Dashboard */
+        .admin-dashboard { display: none; }
+        .admin-info-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            margin-bottom: 24px;
+        }
+        .admin-info-bar .info-text {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+        .admin-info-bar .info-text strong {
+            color: var(--text);
+        }
+        .admin-info-bar .logout-btn {
+            padding: 6px 16px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-family: Inter, sans-serif;
+        }
+        .admin-info-bar .logout-btn:hover {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        /* Subscriber list */
+        .subscriber-section h3 {
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: 18px;
+            margin: 0 0 16px;
+        }
+        .subscriber-count {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+        .subscriber-list {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        .subscriber-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+        .subscriber-item:last-child { border-bottom: none; }
+        .subscriber-item .sub-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .subscriber-item .sub-index {
+            font-size: 13px;
+            color: var(--text-muted);
+            width: 28px;
+        }
+        .subscriber-item .sub-email {
+            font-weight: 500;
+            font-size: 14px;
+        }
+        .subscriber-item .sub-meta {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+        .subscriber-item .delete-btn {
+            padding: 4px 12px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-family: Inter, sans-serif;
+        }
+        .subscriber-item .delete-btn:hover {
+            border-color: var(--danger);
+            color: var(--danger);
+            background: rgba(220, 53, 69, 0.05);
+        }
+        .empty-state {
+            text-align: center;
+            padding: 48px 20px;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+        .storage-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            background: rgba(61, 90, 128, 0.08);
+            color: var(--secondary);
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Login -->
+        <div id="login-section">
+            <div class="login-box">
+                <h2>管理后台</h2>
+                <p>需要验证身份以访问管理功能</p>
+                <input type="password" id="admin-password" placeholder="请输入管理密码" onkeydown="if(event.key==='Enter')adminLogin()">
+                <button onclick="adminLogin()">登录</button>
+                <div class="login-error" id="login-error">密码错误</div>
+            </div>
+        </div>
+
+        <!-- Dashboard -->
+        <div class="admin-dashboard" id="admin-dashboard">
+            <div class="admin-header">
+                <h1>管理后台</h1>
+                <a href="/" class="back-link">返回策略主页</a>
+            </div>
+
+            <div class="admin-info-bar">
+                <div class="info-text">
+                    存储后端: <span class="storage-badge" id="storage-info">-</span>
+                    &nbsp;&nbsp;|&nbsp;&nbsp;
+                    当前订阅人数: <strong id="sub-count">0</strong> 人
+                </div>
+                <button class="logout-btn" onclick="adminLogout()">退出登录</button>
+            </div>
+
+            <div class="subscriber-section">
+                <h3>订阅用户管理</h3>
+                <div class="subscriber-list" id="subscriber-list">
+                    <div class="empty-state">加载中...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let adminPwd = '';
+
+        async function adminLogin() {
+            const pwd = document.getElementById('admin-password').value;
+            const errEl = document.getElementById('login-error');
+            errEl.style.display = 'none';
+
+            try {
+                const resp = await fetch(`/api/admin/login?password=${encodeURIComponent(pwd)}`);
+                const data = await resp.json();
+                if (data.status === 'ok') {
+                    adminPwd = pwd;
+                    document.getElementById('login-section').style.display = 'none';
+                    document.getElementById('admin-dashboard').style.display = 'block';
+                    loadSubscribers();
+                } else {
+                    errEl.textContent = data.message || '密码错误';
+                    errEl.style.display = 'block';
+                }
+            } catch (e) {
+                errEl.textContent = '请求失败: ' + e.message;
+                errEl.style.display = 'block';
+            }
+        }
+
+        function adminLogout() {
+            adminPwd = '';
+            document.getElementById('login-section').style.display = 'block';
+            document.getElementById('admin-dashboard').style.display = 'none';
+            document.getElementById('admin-password').value = '';
+        }
+
+        async function loadSubscribers() {
+            try {
+                const resp = await fetch(`/api/admin/subscribers?password=${encodeURIComponent(adminPwd)}`);
+                const data = await resp.json();
+                if (data.status !== 'ok') return;
+
+                document.getElementById('storage-info').textContent = data.storage_info;
+                document.getElementById('sub-count').textContent = data.total;
+
+                const list = document.getElementById('subscriber-list');
+                if (data.total === 0) {
+                    list.innerHTML = '<div class="empty-state">暂无订阅用户</div>';
+                    return;
+                }
+
+                let html = '';
+                data.subscribers.forEach((sub, i) => {
+                    html += `
+                        <div class="subscriber-item">
+                            <div class="sub-info">
+                                <span class="sub-index">#${i + 1}</span>
+                                <span class="sub-email">${sub.email}</span>
+                                <span class="sub-meta">${sub.push_time} | ${sub.subscribe_time.substring(0, 10)}</span>
+                            </div>
+                            <button class="delete-btn" onclick="deleteSub('${sub.email}')">删除</button>
+                        </div>
+                    `;
+                });
+                list.innerHTML = html;
+            } catch (e) {
+                console.error('加载订阅者失败:', e);
+            }
+        }
+
+        async function deleteSub(email) {
+            if (!confirm(`确认删除订阅者 ${email}？`)) return;
+            try {
+                const resp = await fetch(`/api/admin/delete-subscriber?password=${encodeURIComponent(adminPwd)}&email=${encodeURIComponent(email)}`);
+                const data = await resp.json();
+                if (data.status === 'ok') {
+                    loadSubscribers();
+                } else {
+                    alert(data.message);
+                }
+            } catch (e) {
+                alert('删除失败: ' + e.message);
+            }
+        }
+    </script>
+</body>
+</html>

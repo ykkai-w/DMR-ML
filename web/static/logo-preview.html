@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DMR-ML - Logo 方案预览</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #FAFAF7;
+            color: #2D2A26;
+            padding: 60px 40px;
+            line-height: 1.6;
+        }
+        h1 {
+            font-family: Georgia, serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+        .subtitle { color: #8B8680; font-size: 0.85rem; margin-bottom: 48px; }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 28px;
+            max-width: 1200px;
+        }
+        .option {
+            background: #fff;
+            border: 1px solid #E8E4DE;
+            border-radius: 20px;
+            padding: 36px 28px;
+            text-align: center;
+            transition: box-shadow 0.3s, transform 0.3s;
+        }
+        .option:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+        }
+        .option-label {
+            font-size: 0.70rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #8B8680;
+            margin-bottom: 24px;
+        }
+        .logo-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 16px;
+        }
+        .logo-row svg { filter: drop-shadow(0 4px 12px rgba(61,90,128,0.15)); }
+        .logo-name {
+            font-family: Georgia, serif;
+            font-size: 1.15rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+        .option-desc {
+            font-size: 0.76rem;
+            color: #8B8680;
+            margin-top: 14px;
+            line-height: 1.7;
+        }
+        .sizes {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 20px;
+            padding-top: 18px;
+            border-top: 1px solid #E8E4DE;
+        }
+        .sizes span { font-size: 0.62rem; color: #A8A29E; }
+    </style>
+</head>
+<body>
+    <h1>Logo 方案预览</h1>
+    <p class="subtitle">5 种设计方向 — 主色调 #3D5A80 (深蓝) + #C0625F (暖红) + #FFFFFF (白)</p>
+
+    <div class="grid">
+
+        <!-- Option A: 双圆交融 -->
+        <div class="option">
+            <div class="option-label">A — 双圆交融</div>
+            <div class="logo-row">
+                <svg width="64" height="64" viewBox="0 0 32 32">
+                    <rect width="32" height="32" rx="8" fill="#3D5A80"/>
+                    <circle cx="13" cy="13.5" r="8" fill="rgba(192,98,95,0.50)"/>
+                    <circle cx="19" cy="18.5" r="8" fill="rgba(255,255,255,0.28)"/>
+                </svg>
+                <span class="logo-name">DMR-ML</span>
+            </div>
+            <p class="option-desc">
+                两个半透明圆形交叠 — 暖红代表 DMR 动量，冷白代表 ML 风控。<br>
+                与加载动画直接关联：静态 Logo 是动态变形的定格一帧。
+            </p>
+            <div class="sizes">
+                <svg width="48" height="48" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#3D5A80"/><circle cx="13" cy="13.5" r="8" fill="rgba(192,98,95,0.50)"/><circle cx="19" cy="18.5" r="8" fill="rgba(255,255,255,0.28)"/></svg>
+                <svg width="32" height="32" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#3D5A80"/><circle cx="13" cy="13.5" r="8" fill="rgba(192,98,95,0.50)"/><circle cx="19" cy="18.5" r="8" fill="rgba(255,255,255,0.28)"/></svg>
+                <svg width="20" height="20" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#3D5A80"/><circle cx="13" cy="13.5" r="8" fill="rgba(192,98,95,0.50)"/><circle cx="19" cy="18.5" r="8" fill="rgba(255,255,255,0.28)"/></svg>
+                <span>48 / 32 / 20</span>
+            </div>
+        </div>
+
+        <!-- Option B: 脉冲曲线 -->
+        <div class="option">
+            <div class="option-label">B — 脉冲曲线</div>
+            <div class="logo-row">
+                <svg width="64" height="64" viewBox="0 0 32 32">
+                    <rect width="32" height="32" rx="8" fill="#3D5A80"/>
+                    <path d="M6 20 Q10 8, 16 16 Q22 24, 26 12" fill="none" stroke="rgba(255,255,255,0.82)" stroke-width="2.2" stroke-linecap="round"/>
+                    <circle cx="26" cy="12" r="2.2" fill="rgba(192,98,95,0.75)"/>
+                </svg>
+                <span class="logo-name">DMR-ML</span>
+            </div>
+            <p class="option-desc">
+                S 型市场曲线 + 终点红色圆点。<br>
+                直观表达"追踪趋势、把握拐点"。极简，辨识度高。
+            </p>
+            <div class="sizes">
+                <svg width="48" height="48" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#3D5A80"/><path d="M6 20 Q10 8, 16 16 Q22 24, 26 12" fill="none" stroke="rgba(255,255,255,0.82)" stroke-width="2.2" stroke-linecap="round"/><circle cx="26" cy="12" r="2.2" fill="rgba(192,98,95,0.75)"/></svg>
+                <svg width="32" height="32" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#3D5A80"/><path d="M6 20 Q10 8, 16 16 Q22 24, 26 12" fill="none" stroke="rgba(255,255,255,0.82)" stroke-width="2.2" stroke-linecap="round"/><circle cx="26" cy="12" r="2.2" fill="rgba(192,98,95,0.75)"/></svg>
+                <svg width="20" height="20" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#3D5A80"/><path d="M6 20 Q10 8, 16 16 Q22 24, 26 12" fill="none" stroke="rgba(255,255,255,0.82)" stroke-width="2.2" stroke-linecap="round"/><circle cx="26" cy="12" r="2.2" fill="rgba(192,98,95,0.75)"/></svg>
+                <span>48 / 32 / 20</span>
+            </div>
+        </div>
+
+        <!-- Option C: 棱镜折射 -->
+        <div class="option">
+            <div class="option-label">C — 棱镜折射</div>
+            <div class="logo-row">
+                <svg width="64" height="64" viewBox="0 0 32 32">
+                    <rect width="32" height="32" rx="8" fill="#3D5A80"/>
+                    <path d="M16 7 L25 22 L7 22 Z" fill="none" stroke="rgba(255,255,255,0.50)" stroke-width="1.2" stroke-linejoin="round"/>
+                    <path d="M16 7 L25 22 L16 22 Z" fill="rgba(192,98,95,0.35)"/>
+                    <path d="M16 7 L7 22 L16 22 Z" fill="rgba(255,255,255,0.18)"/>
+                </svg>
+                <span class="logo-name">DMR-ML</span>
+            </div>
+            <p class="option-desc">
+                三角棱镜一分为二 — 数据经过 ML 折射后输出决策。<br>
+                几何感强，学术气质，适合论文和正式场合。
+            </p>
+            <div class="sizes">
+                <svg width="48" height="48" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#3D5A80"/><path d="M16 7 L25 22 L7 22 Z" fill="none" stroke="rgba(255,255,255,0.50)" stroke-width="1.2" stroke-linejoin="round"/><path d="M16 7 L25 22 L16 22 Z" fill="rgba(192,98,95,0.35)"/><path d="M16 7 L7 22 L16 22 Z" fill="rgba(255,255,255,0.18)"/></svg>
+                <svg width="32" height="32" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#3D5A80"/><path d="M16 7 L25 22 L7 22 Z" fill="none" stroke="rgba(255,255,255,0.50)" stroke-width="1.2" stroke-linejoin="round"/><path d="M16 7 L25 22 L16 22 Z" fill="rgba(192,98,95,0.35)"/><path d="M16 7 L7 22 L16 22 Z" fill="rgba(255,255,255,0.18)"/></svg>
+                <svg width="20" height="20" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#3D5A80"/><path d="M16 7 L25 22 L7 22 Z" fill="none" stroke="rgba(255,255,255,0.50)" stroke-width="1.2" stroke-linejoin="round"/><path d="M16 7 L25 22 L16 22 Z" fill="rgba(192,98,95,0.35)"/><path d="M16 7 L7 22 L16 22 Z" fill="rgba(255,255,255,0.18)"/></svg>
+                <span>48 / 32 / 20</span>
+            </div>
+        </div>
+
+        <!-- Option D: 双轨动量 -->
+        <div class="option">
+            <div class="option-label">D — 双轨动量</div>
+            <div class="logo-row">
+                <svg width="64" height="64" viewBox="0 0 32 32">
+                    <rect width="32" height="32" rx="8" fill="#3D5A80"/>
+                    <path d="M7 21 L13 15 L19 18 L25 10" fill="none" stroke="rgba(255,255,255,0.82)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M7 24 L13 19 L19 22 L25 15" fill="none" stroke="rgba(192,98,95,0.55)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="25" cy="10" r="2" fill="#fff" opacity="0.9"/>
+                </svg>
+                <span class="logo-name">DMR-ML</span>
+            </div>
+            <p class="option-desc">
+                两条平行走势线 — 白线策略，红线基准，终点白圆代表超额收益。<br>
+                直接传达"双重动量轮动"核心理念。
+            </p>
+            <div class="sizes">
+                <svg width="48" height="48" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#3D5A80"/><path d="M7 21 L13 15 L19 18 L25 10" fill="none" stroke="rgba(255,255,255,0.82)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 24 L13 19 L19 22 L25 15" fill="none" stroke="rgba(192,98,95,0.55)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="25" cy="10" r="2" fill="#fff" opacity="0.9"/></svg>
+                <svg width="32" height="32" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#3D5A80"/><path d="M7 21 L13 15 L19 18 L25 10" fill="none" stroke="rgba(255,255,255,0.82)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 24 L13 19 L19 22 L25 15" fill="none" stroke="rgba(192,98,95,0.55)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="25" cy="10" r="2" fill="#fff" opacity="0.9"/></svg>
+                <svg width="20" height="20" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#3D5A80"/><path d="M7 21 L13 15 L19 18 L25 10" fill="none" stroke="rgba(255,255,255,0.82)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 24 L13 19 L19 22 L25 15" fill="none" stroke="rgba(192,98,95,0.55)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="25" cy="10" r="2" fill="#fff" opacity="0.9"/></svg>
+                <span>48 / 32 / 20</span>
+            </div>
+        </div>
+
+        <!-- Option E: 透镜交汇 -->
+        <div class="option">
+            <div class="option-label">E — 透镜交汇</div>
+            <div class="logo-row">
+                <svg width="64" height="64" viewBox="0 0 32 32">
+                    <rect width="32" height="32" rx="8" fill="#3D5A80"/>
+                    <ellipse cx="12.5" cy="16" rx="7.5" ry="9" fill="none" stroke="rgba(192,98,95,0.60)" stroke-width="1.5"/>
+                    <ellipse cx="19.5" cy="16" rx="7.5" ry="9" fill="none" stroke="rgba(255,255,255,0.50)" stroke-width="1.5"/>
+                    <ellipse cx="16" cy="16" rx="4" ry="9" fill="rgba(255,255,255,0.12)"/>
+                </svg>
+                <span class="logo-name">DMR-ML</span>
+            </div>
+            <p class="option-desc">
+                韦恩图 — 红圈 DMR，白圈 ML，交集区域即策略的核心价值区。<br>
+                传达"两种方法论融合产出最优解"。
+            </p>
+            <div class="sizes">
+                <svg width="48" height="48" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#3D5A80"/><ellipse cx="12.5" cy="16" rx="7.5" ry="9" fill="none" stroke="rgba(192,98,95,0.60)" stroke-width="1.5"/><ellipse cx="19.5" cy="16" rx="7.5" ry="9" fill="none" stroke="rgba(255,255,255,0.50)" stroke-width="1.5"/><ellipse cx="16" cy="16" rx="4" ry="9" fill="rgba(255,255,255,0.12)"/></svg>
+                <svg width="32" height="32" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#3D5A80"/><ellipse cx="12.5" cy="16" rx="7.5" ry="9" fill="none" stroke="rgba(192,98,95,0.60)" stroke-width="1.5"/><ellipse cx="19.5" cy="16" rx="7.5" ry="9" fill="none" stroke="rgba(255,255,255,0.50)" stroke-width="1.5"/><ellipse cx="16" cy="16" rx="4" ry="9" fill="rgba(255,255,255,0.12)"/></svg>
+                <svg width="20" height="20" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#3D5A80"/><ellipse cx="12.5" cy="16" rx="7.5" ry="9" fill="none" stroke="rgba(192,98,95,0.60)" stroke-width="1.5"/><ellipse cx="19.5" cy="16" rx="7.5" ry="9" fill="none" stroke="rgba(255,255,255,0.50)" stroke-width="1.5"/><ellipse cx="16" cy="16" rx="4" ry="9" fill="rgba(255,255,255,0.12)"/></svg>
+                <span>48 / 32 / 20</span>
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>

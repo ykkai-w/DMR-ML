@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DMR-ML 原理动画 · 方案C · 心电图脉冲</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #FAFAF7;
+    font-family: Georgia, 'Times New Roman', serif;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    min-height: 100vh; color: #2D2A26;
+    padding: 40px 20px;
+  }
+  h2 { font-size: 1.1rem; color: #2D2A26; margin-bottom: 8px; }
+  .subtitle { font-size: 0.78rem; color: #8B8680; margin-bottom: 36px; font-family: 'Inter', sans-serif; }
+
+  .anim-container { width: 100%; max-width: 480px; }
+  svg { width: 100%; height: auto; }
+
+  /* === Central heartbeat line === */
+  .pulse-line {
+    stroke-dasharray: 600;
+    stroke-dashoffset: 600;
+  }
+  .playing .pulse-line {
+    animation: draw-pulse 3s cubic-bezier(0.3,0,0.2,1) 0.5s forwards;
+  }
+  @keyframes draw-pulse { to { stroke-dashoffset: 0; } }
+
+  /* Glow behind pulse */
+  .pulse-glow {
+    stroke-dasharray: 600;
+    stroke-dashoffset: 600;
+    opacity: 0;
+  }
+  .playing .pulse-glow {
+    animation: draw-pulse 3s cubic-bezier(0.3,0,0.2,1) 0.5s forwards, glow-fade 3s ease-out 0.5s forwards;
+  }
+  @keyframes glow-fade { to { opacity: 0.08; } }
+
+  /* === Dot follows pulse === */
+  .pulse-dot {
+    opacity: 0;
+    offset-path: path('M 30 200 L 80 200 L 100 200 L 115 180 L 130 200 L 160 200 L 180 120 L 195 240 L 210 160 L 225 200 L 260 200 L 280 200 L 295 170 L 310 200 L 340 200 L 360 80 L 375 260 L 390 140 L 410 200 L 450 200');
+    offset-rotate: 0deg;
+  }
+  .playing .pulse-dot {
+    animation: dot-on 0.01s 0.5s forwards, dot-move 3s cubic-bezier(0.3,0,0.2,1) 0.5s forwards, dot-off 0.3s 3.3s forwards;
+  }
+  @keyframes dot-on { to { opacity: 1; } }
+  @keyframes dot-move { from { offset-distance: 0%; } to { offset-distance: 100%; } }
+  @keyframes dot-off { to { opacity: 0; } }
+
+  /* Red shadow dot, slightly delayed */
+  .pulse-dot-red {
+    opacity: 0;
+    offset-path: path('M 30 204 L 80 204 L 100 204 L 115 184 L 130 204 L 160 204 L 183 124 L 198 244 L 213 164 L 228 204 L 260 204 L 280 204 L 298 174 L 313 204 L 340 204 L 363 84 L 378 264 L 393 144 L 413 204 L 450 204');
+    offset-rotate: 0deg;
+  }
+  .playing .pulse-dot-red {
+    animation: dot-on 0.01s 0.8s forwards, dot-move 3s cubic-bezier(0.3,0,0.2,1) 0.8s forwards, dot-off 0.3s 3.6s forwards;
+  }
+
+  /* === Phase annotations === */
+  .ann { opacity: 0; }
+  .playing .ann-1 { animation: fade-up 0.6s ease-out 1.0s forwards; }
+  .playing .ann-2 { animation: fade-up 0.6s ease-out 2.2s forwards; }
+  .playing .ann-3 { animation: fade-up 0.6s ease-out 3.5s forwards; }
+  @keyframes fade-up {
+    0% { opacity: 0; transform: translateY(8px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  /* === Bracket lines === */
+  .bracket { opacity: 0; }
+  .playing .bracket-1 { animation: fade-in 0.4s ease-out 1.0s forwards; }
+  .playing .bracket-2 { animation: fade-in 0.4s ease-out 2.2s forwards; }
+  .playing .bracket-3 { animation: fade-in 0.4s ease-out 3.5s forwards; }
+  @keyframes fade-in { to { opacity: 1; } }
+
+  /* === Result pulse === */
+  .result { opacity: 0; }
+  .playing .result {
+    animation: result-in 0.8s ease-out 4.2s forwards;
+  }
+  @keyframes result-in {
+    0% { opacity: 0; transform: scale(0.8); }
+    50% { transform: scale(1.04); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+
+  /* === Section zone backgrounds === */
+  .zone { opacity: 0; }
+  .playing .zone-1 { animation: fade-in 0.5s ease-out 0.8s forwards; }
+  .playing .zone-2 { animation: fade-in 0.5s ease-out 2.0s forwards; }
+
+  /* Labels */
+  .label-title { font-family: Georgia, serif; font-size: 12px; font-weight: 700; }
+  .label-desc { font-family: 'Inter', sans-serif; font-size: 9px; fill: #8B8680; }
+  .label-small { font-family: 'Inter', sans-serif; font-size: 8.5px; fill: #B8B2A8; }
+
+  .legend {
+    margin-top: 24px; display: flex; gap: 24px;
+    font-size: 0.72rem; color: #8B8680;
+    font-family: 'Inter', sans-serif;
+  }
+  .legend span { display: flex; align-items: center; gap: 6px; }
+  .legend .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  .desc-box {
+    margin-top: 20px; max-width: 420px; text-align: center;
+    font-size: 0.76rem; color: #8B8680; line-height: 1.7;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .replay-btn {
+    margin-top: 20px; padding: 8px 24px;
+    border: 1px solid #E8E4DE; border-radius: 20px;
+    background: transparent; color: #8B8680;
+    font-family: 'Inter', sans-serif; font-size: 0.75rem;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .replay-btn:hover { border-color: #3D5A80; color: #3D5A80; }
+  .tag { font-size: 0.68rem; color: #B8B2A8; margin-top: 32px; font-family: 'Inter', sans-serif; }
+</style>
+</head>
+<body>
+  <h2>DMR-ML 策略原理</h2>
+  <p class="subtitle">方案 C · 心电图脉冲 Pulse</p>
+
+  <div class="anim-container playing" id="anim">
+    <svg viewBox="0 0 480 360" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <filter id="glow"><feGaussianBlur stdDeviation="5"/></filter>
+        <linearGradient id="grad-blue" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#3D5A80" stop-opacity="0.06"/>
+          <stop offset="100%" stop-color="#3D5A80" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="grad-red" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#C0625F" stop-opacity="0"/>
+          <stop offset="100%" stop-color="#C0625F" stop-opacity="0.06"/>
+        </linearGradient>
+      </defs>
+
+      <!-- Zone backgrounds -->
+      <rect class="zone zone-1" x="80" y="70" width="170" height="190" rx="6" fill="url(#grad-blue)"/>
+      <rect class="zone zone-2" x="270" y="70" width="170" height="190" rx="6" fill="url(#grad-red)"/>
+
+      <!-- Zone labels at top -->
+      <g class="zone zone-1">
+        <text class="label-title" x="165" y="60" text-anchor="middle" fill="#3D5A80">DMR 双重动量</text>
+        <text class="label-small" x="165" y="78" text-anchor="middle">"买什么"</text>
+      </g>
+      <g class="zone zone-2">
+        <text class="label-title" x="355" y="60" text-anchor="middle" fill="#C0625F">ML 风险门禁</text>
+        <text class="label-small" x="355" y="78" text-anchor="middle">"该不该买"</text>
+      </g>
+
+      <!-- Central heartbeat line: flat → small DMR pulse → flat → big ML pulse → flat -->
+      <!-- DMR region: small controlled pulses (momentum comparison) -->
+      <!-- ML region: big dramatic pulse (risk assessment) -->
+      <path class="pulse-glow"
+            d="M 30 200 L 80 200 L 100 200 L 115 180 L 130 200 L 160 200 L 180 120 L 195 240 L 210 160 L 225 200 L 260 200 L 280 200 L 295 170 L 310 200 L 340 200 L 360 80 L 375 260 L 390 140 L 410 200 L 450 200"
+            stroke="#3D5A80" stroke-width="16" fill="none" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"/>
+
+      <path class="pulse-line"
+            d="M 30 200 L 80 200 L 100 200 L 115 180 L 130 200 L 160 200 L 180 120 L 195 240 L 210 160 L 225 200 L 260 200 L 280 200 L 295 170 L 310 200 L 340 200 L 360 80 L 375 260 L 390 140 L 410 200 L 450 200"
+            stroke="#3D5A80" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+      <!-- Red shadow line (offset) -->
+      <path class="pulse-line"
+            d="M 30 204 L 80 204 L 100 204 L 115 184 L 130 204 L 160 204 L 183 124 L 198 244 L 213 164 L 228 204 L 260 204 L 280 204 L 298 174 L 313 204 L 340 204 L 363 84 L 378 264 L 393 144 L 413 204 L 450 204"
+            stroke="#C0625F" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
+
+      <!-- Blue dot -->
+      <circle class="pulse-dot" r="4" fill="#3D5A80"/>
+      <!-- Red dot -->
+      <circle class="pulse-dot-red" r="3.5" fill="#C0625F"/>
+
+      <!-- Annotation 1: DMR small pulse explanation -->
+      <g class="ann ann-1">
+        <line x1="195" y1="240" x2="195" y2="270" stroke="#3D5A80" stroke-width="0.8" opacity="0.4"/>
+        <rect x="115" y="272" width="160" height="36" rx="6" fill="#FAFAF7" stroke="#3D5A80" stroke-width="0.8" opacity="0.9"/>
+        <text x="195" y="286" text-anchor="middle" font-family="Inter,sans-serif" font-size="9" fill="#3D5A80">动量计算：近 N 日涨跌幅</text>
+        <text x="195" y="300" text-anchor="middle" font-family="Inter,sans-serif" font-size="8.5" fill="#8B8680">沪深300 vs 中证1000，谁强持谁</text>
+      </g>
+
+      <!-- Annotation 2: ML big pulse explanation -->
+      <g class="ann ann-2">
+        <line x1="375" y1="260" x2="375" y2="272" stroke="#C0625F" stroke-width="0.8" opacity="0.4"/>
+        <rect x="295" y="272" width="160" height="36" rx="6" fill="#FAFAF7" stroke="#C0625F" stroke-width="0.8" opacity="0.9"/>
+        <text x="375" y="286" text-anchor="middle" font-family="Inter,sans-serif" font-size="9" fill="#C0625F">风险扫描：随机森林 100 棵树投票</text>
+        <text x="375" y="300" text-anchor="middle" font-family="Inter,sans-serif" font-size="8.5" fill="#8B8680">下跌概率 &gt; 40% → 强制空仓避险</text>
+      </g>
+
+      <!-- Result annotation -->
+      <g class="result">
+        <rect x="150" y="322" width="180" height="28" rx="14" fill="none" stroke="#2D2A26" stroke-width="1"/>
+        <text x="240" y="340" text-anchor="middle" font-family="Georgia" font-size="11" fill="#2D2A26" font-weight="700">输出 → 每日交易信号</text>
+      </g>
+
+      <!-- Flat line labels -->
+      <text class="label-small" x="30" y="195" text-anchor="start">输入</text>
+      <text class="label-small" x="450" y="195" text-anchor="end">输出</text>
+
+    </svg>
+  </div>
+
+  <div class="legend">
+    <span><span class="dot" style="background:#3D5A80"></span>DMR 动量信号</span>
+    <span><span class="dot" style="background:#C0625F"></span>ML 风控信号</span>
+  </div>
+
+  <p class="desc-box">
+    像心电图一样：平线代表等待，DMR 区域的脉冲代表动量比较，ML 区域的大脉冲代表风险扫描。两段脉冲都通过，才输出交易信号。
+  </p>
+
+  <button class="replay-btn" onclick="replay()">重播动画</button>
+  <p class="tag">方案 C · 心电图脉冲 · 用 ECG 风格的线条表达策略的"生命体征"</p>
+
+<script>
+function replay() {
+  const el = document.getElementById('anim');
+  el.classList.remove('playing');
+  void el.offsetWidth;
+  el.classList.add('playing');
+}
+</script>
+</body>
+</html>

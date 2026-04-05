@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DMR-ML 原理动画 · 方案A · 信号管线</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #FAFAF7;
+    font-family: Georgia, 'Times New Roman', serif;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    min-height: 100vh; color: #2D2A26;
+    padding: 40px 20px;
+  }
+  h2 { font-size: 1.1rem; color: #2D2A26; margin-bottom: 8px; letter-spacing: -0.01em; }
+  .subtitle { font-size: 0.78rem; color: #8B8680; margin-bottom: 36px; font-family: 'Inter', sans-serif; }
+  .anim-container {
+    width: 100%; max-width: 520px;
+    position: relative;
+  }
+  svg { width: 100%; height: auto; }
+
+  /* --- Pipeline path --- */
+  .pipe-main {
+    stroke-dasharray: 1200;
+    stroke-dashoffset: 1200;
+  }
+  .playing .pipe-main {
+    animation: draw-pipe 3s cubic-bezier(0.4,0,0.2,1) 0.3s forwards;
+  }
+  @keyframes draw-pipe { to { stroke-dashoffset: 0; } }
+
+  /* --- Nodes fade in --- */
+  .node { opacity: 0; }
+  .playing .node-data    { animation: fade-in 0.5s ease-out 0.3s forwards; }
+  .playing .node-mom     { animation: fade-in 0.5s ease-out 1.2s forwards; }
+  .playing .node-ml      { animation: fade-in 0.5s ease-out 2.0s forwards; }
+  .playing .node-signal  { animation: fade-in 0.5s ease-out 2.8s forwards; }
+  @keyframes fade-in { to { opacity: 1; } }
+
+  /* --- Dot traveler --- */
+  .dot-traveler {
+    opacity: 0;
+    offset-path: path('M 60 150 C 120 150, 140 80, 200 80 S 280 150, 340 150 C 380 150, 400 80, 460 80');
+    offset-rotate: 0deg;
+  }
+  .playing .dot-traveler {
+    animation: dot-on 0.01s 0.5s forwards, dot-travel 2.8s cubic-bezier(0.4,0,0.2,1) 0.5s forwards, dot-off 0.3s ease-out 3.1s forwards;
+  }
+  @keyframes dot-on { to { opacity: 1; } }
+  @keyframes dot-travel { from { offset-distance: 0%; } to { offset-distance: 100%; } }
+  @keyframes dot-off { to { opacity: 0; } }
+
+  /* --- Glow pulse on ML gate --- */
+  .ml-glow { opacity: 0; }
+  .playing .ml-glow {
+    animation: glow-pulse 1.5s ease-in-out 2.0s 3;
+  }
+  @keyframes glow-pulse {
+    0% { opacity: 0; }
+    50% { opacity: 0.18; }
+    100% { opacity: 0; }
+  }
+
+  /* --- Labels --- */
+  .label { font-family: 'Inter', Georgia, sans-serif; font-size: 11px; fill: #8B8680; }
+  .label-bold { font-family: Georgia, serif; font-size: 13px; fill: #2D2A26; font-weight: 700; }
+  .label-small { font-family: 'Inter', sans-serif; font-size: 9.5px; fill: #B8B2A8; }
+
+  /* --- Signal result text --- */
+  .signal-text { opacity: 0; font-family: Georgia, serif; font-size: 13px; fill: #A0403C; font-weight: 700; }
+  .playing .signal-text { animation: fade-in 0.6s ease-out 3.2s forwards; }
+
+  /* --- Momentum comparison bars --- */
+  .bar-300, .bar-1000 { opacity: 0; }
+  .playing .bar-300  { animation: fade-in 0.3s ease-out 1.4s forwards, bar-grow-300 0.8s ease-out 1.4s forwards; }
+  .playing .bar-1000 { animation: fade-in 0.3s ease-out 1.6s forwards, bar-grow-1000 0.8s ease-out 1.6s forwards; }
+  @keyframes bar-grow-300  { from { width: 0; } to { width: 32px; } }
+  @keyframes bar-grow-1000 { from { width: 0; } to { width: 48px; } }
+
+  /* --- Winner highlight --- */
+  .winner-mark { opacity: 0; }
+  .playing .winner-mark { animation: fade-in 0.4s ease-out 2.5s forwards; }
+
+  /* --- Shield icon --- */
+  .shield { opacity: 0; }
+  .playing .shield { animation: fade-in 0.4s ease-out 2.2s forwards, shield-pulse 1.2s ease-in-out 2.2s 2; }
+  @keyframes shield-pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+    100% { transform: scale(1); }
+  }
+
+  /* --- Bottom legend --- */
+  .legend {
+    margin-top: 28px; display: flex; gap: 24px;
+    font-size: 0.72rem; color: #8B8680;
+    font-family: 'Inter', sans-serif;
+  }
+  .legend span { display: flex; align-items: center; gap: 6px; }
+  .legend .dot-blue { width: 8px; height: 8px; border-radius: 50%; background: #3D5A80; }
+  .legend .dot-red  { width: 8px; height: 8px; border-radius: 50%; background: #C0625F; }
+
+  /* --- Replay button --- */
+  .replay-btn {
+    margin-top: 20px; padding: 8px 24px;
+    border: 1px solid #E8E4DE; border-radius: 20px;
+    background: transparent; color: #8B8680;
+    font-family: 'Inter', sans-serif; font-size: 0.75rem;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .replay-btn:hover { border-color: #3D5A80; color: #3D5A80; }
+
+  .tag { font-size: 0.68rem; color: #B8B2A8; margin-top: 32px; font-family: 'Inter', sans-serif; }
+</style>
+</head>
+<body>
+  <h2>DMR-ML 策略原理</h2>
+  <p class="subtitle">方案 A · 信号管线 Pipeline</p>
+
+  <div class="anim-container playing" id="anim">
+    <svg viewBox="0 0 520 300" xmlns="http://www.w3.org/2000/svg">
+      <!-- Pipeline path -->
+      <path class="pipe-main" d="M 60 150 C 120 150, 140 80, 200 80 S 280 150, 340 150 C 380 150, 400 80, 460 80"
+            stroke="#E8E4DE" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+      <!-- Colored overlay paths -->
+      <path class="pipe-main" d="M 60 150 C 120 150, 140 80, 200 80"
+            stroke="#3D5A80" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.6"/>
+      <path class="pipe-main" d="M 280 150 C 310 150, 340 120, 340 150 C 380 150, 400 80, 460 80"
+            stroke="#C0625F" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.6"/>
+
+      <!-- Dot traveler -->
+      <circle class="dot-traveler" r="4" fill="#3D5A80"/>
+
+      <!-- Node 1: Market Data -->
+      <g class="node node-data">
+        <circle cx="60" cy="150" r="22" fill="none" stroke="#3D5A80" stroke-width="1.5"/>
+        <text class="label-bold" x="60" y="154" text-anchor="middle">数据</text>
+        <text class="label-small" x="60" y="186" text-anchor="middle">市场行情输入</text>
+      </g>
+
+      <!-- Node 2: Dual Momentum -->
+      <g class="node node-mom">
+        <rect x="168" y="42" width="64" height="38" rx="8" fill="none" stroke="#3D5A80" stroke-width="1.5"/>
+        <text class="label-bold" x="200" y="58" text-anchor="middle" fill="#3D5A80" font-size="11">双重动量</text>
+        <text class="label-small" x="200" y="72" text-anchor="middle">轮动排名</text>
+
+        <!-- Momentum bars -->
+        <rect class="bar-300" x="174" y="92" height="6" rx="3" fill="#3D5A80" opacity="0.5" width="32"/>
+        <rect class="bar-1000" x="174" y="104" height="6" rx="3" fill="#3D5A80" width="48"/>
+        <text class="label-small" x="172" y="91" text-anchor="end" font-size="8">300</text>
+        <text class="label-small" x="172" y="103" text-anchor="end" font-size="8">1000</text>
+
+        <!-- Winner arrow -->
+        <g class="winner-mark">
+          <text x="226" y="110" font-size="10" fill="#3D5A80">&#x2713;</text>
+        </g>
+      </g>
+
+      <!-- Node 3: ML Risk Gate -->
+      <g class="node node-ml" transform="translate(340, 150)">
+        <!-- Glow -->
+        <circle class="ml-glow" cx="0" cy="0" r="32" fill="#C0625F" opacity="0"/>
+        <!-- Shield shape -->
+        <g class="shield">
+          <path d="M 0 -20 L 16 -12 L 16 6 C 16 16, 0 24, 0 24 C 0 24, -16 16, -16 6 L -16 -12 Z"
+                fill="none" stroke="#C0625F" stroke-width="1.5"/>
+          <text x="0" y="2" text-anchor="middle" font-family="Georgia" font-size="10" fill="#C0625F" font-weight="700">ML</text>
+        </g>
+        <text class="label-small" x="0" y="38" text-anchor="middle">风险门禁</text>
+        <text class="label-small" x="0" y="50" text-anchor="middle" fill="#C0625F">概率 &lt; 40%</text>
+      </g>
+
+      <!-- Node 4: Signal Output -->
+      <g class="node node-signal">
+        <circle cx="460" cy="80" r="22" fill="none" stroke="#A0403C" stroke-width="1.5"/>
+        <text class="label-bold" x="460" y="76" text-anchor="middle" fill="#A0403C" font-size="11">信号</text>
+        <text class="label-small" x="460" y="90" text-anchor="middle">买入/卖出</text>
+      </g>
+
+      <!-- Signal result -->
+      <text class="signal-text" x="460" y="120" text-anchor="middle">持有中证1000</text>
+
+      <!-- Step labels along bottom -->
+      <text class="label-small" x="60" y="280" text-anchor="middle">Step 1</text>
+      <text class="label-small" x="200" y="280" text-anchor="middle">Step 2</text>
+      <text class="label-small" x="340" y="280" text-anchor="middle">Step 3</text>
+      <text class="label-small" x="460" y="280" text-anchor="middle">Step 4</text>
+
+      <!-- Connecting dotted lines to step labels -->
+      <line x1="60" y1="175" x2="60" y2="270" stroke="#E8E4DE" stroke-width="0.8" stroke-dasharray="3,3"/>
+      <line x1="200" y1="120" x2="200" y2="270" stroke="#E8E4DE" stroke-width="0.8" stroke-dasharray="3,3"/>
+      <line x1="340" y1="205" x2="340" y2="270" stroke="#E8E4DE" stroke-width="0.8" stroke-dasharray="3,3"/>
+      <line x1="460" y1="105" x2="460" y2="270" stroke="#E8E4DE" stroke-width="0.8" stroke-dasharray="3,3"/>
+
+      <!-- Step descriptions -->
+      <text class="label" x="60" y="294" text-anchor="middle">获取行情</text>
+      <text class="label" x="200" y="294" text-anchor="middle">动量比较</text>
+      <text class="label" x="340" y="294" text-anchor="middle">风控过滤</text>
+      <text class="label" x="460" y="294" text-anchor="middle">输出信号</text>
+    </svg>
+  </div>
+
+  <div class="legend">
+    <span><span class="dot-blue"></span>DMR 双重动量</span>
+    <span><span class="dot-red"></span>ML 风险门禁</span>
+  </div>
+
+  <button class="replay-btn" onclick="replay()">重播动画</button>
+  <p class="tag">方案 A · 管线式流程 · 强调数据从输入到输出的完整路径</p>
+
+<script>
+function replay() {
+  const el = document.getElementById('anim');
+  el.classList.remove('playing');
+  void el.offsetWidth; // force reflow
+  el.classList.add('playing');
+}
+</script>
+</body>
+</html>

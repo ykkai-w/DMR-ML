@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DMR-ML 原理动画 · 方案B · 双线博弈</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #FAFAF7;
+    font-family: Georgia, 'Times New Roman', serif;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    min-height: 100vh; color: #2D2A26;
+    padding: 40px 20px;
+  }
+  h2 { font-size: 1.1rem; color: #2D2A26; margin-bottom: 8px; }
+  .subtitle { font-size: 0.78rem; color: #8B8680; margin-bottom: 36px; font-family: 'Inter', sans-serif; }
+
+  .anim-container { width: 100%; max-width: 520px; }
+  svg { width: 100%; height: auto; }
+
+  /* --- Phase 1: Two momentum lines race --- */
+  .line-300 {
+    stroke-dasharray: 400;
+    stroke-dashoffset: 400;
+  }
+  .line-1000 {
+    stroke-dasharray: 400;
+    stroke-dashoffset: 400;
+  }
+  .playing .line-300 {
+    animation: draw-line 2.5s cubic-bezier(0.4,0,0.2,1) 0.4s forwards;
+  }
+  .playing .line-1000 {
+    animation: draw-line 2.5s cubic-bezier(0.4,0,0.2,1) 0.6s forwards;
+  }
+  @keyframes draw-line { to { stroke-dashoffset: 0; } }
+
+  /* --- Phase 2: Winner glow --- */
+  .winner-glow {
+    stroke-dasharray: 400;
+    stroke-dashoffset: 400;
+    opacity: 0;
+  }
+  .playing .winner-glow {
+    animation: draw-line 1.5s ease-out 3.2s forwards, glow-on 0.5s ease-out 3.2s forwards;
+  }
+  @keyframes glow-on { to { opacity: 0.15; } }
+
+  /* --- Phase 2b: Winner label --- */
+  .winner-label { opacity: 0; }
+  .playing .winner-label { animation: fade-in 0.5s ease-out 3.5s forwards; }
+
+  /* --- Phase 3: ML gate descends --- */
+  .ml-gate { opacity: 0; }
+  .playing .ml-gate { animation: gate-drop 0.8s cubic-bezier(0.4,0,0.2,1) 4.2s forwards; }
+  @keyframes gate-drop {
+    0% { opacity: 0; transform: translateY(-20px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  /* --- ML scanning line --- */
+  .scan-line { opacity: 0; }
+  .playing .scan-line {
+    animation: scan 1.2s ease-in-out 5.0s forwards;
+  }
+  @keyframes scan {
+    0% { opacity: 0.6; transform: translateX(0); }
+    50% { opacity: 0.8; transform: translateX(100px); }
+    100% { opacity: 0; transform: translateX(200px); }
+  }
+
+  /* --- Phase 4: Result --- */
+  .result-badge { opacity: 0; }
+  .playing .result-pass { animation: badge-in 0.6s ease-out 6.0s forwards; }
+  @keyframes badge-in {
+    0% { opacity: 0; transform: scale(0.7); }
+    60% { transform: scale(1.05); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+
+  .fade-in { opacity: 0; }
+  .playing .fade-1 { animation: fade-in 0.5s ease-out 0.2s forwards; }
+  .playing .fade-2 { animation: fade-in 0.5s ease-out 3.0s forwards; }
+  .playing .fade-3 { animation: fade-in 0.5s ease-out 4.2s forwards; }
+  .playing .fade-4 { animation: fade-in 0.5s ease-out 6.0s forwards; }
+  @keyframes fade-in { to { opacity: 1; } }
+
+  /* --- Axis labels --- */
+  .axis-label { font-family: 'Inter', sans-serif; font-size: 9px; fill: #B8B2A8; }
+  .phase-label { font-family: Georgia, serif; font-size: 12px; fill: #2D2A26; font-weight: 700; }
+  .phase-sub { font-family: 'Inter', sans-serif; font-size: 9.5px; fill: #8B8680; }
+
+  .legend {
+    margin-top: 28px; display: flex; gap: 24px;
+    font-size: 0.72rem; color: #8B8680;
+    font-family: 'Inter', sans-serif;
+  }
+  .legend span { display: flex; align-items: center; gap: 6px; }
+  .legend .swatch { width: 20px; height: 3px; border-radius: 2px; }
+  .legend .sw-blue { background: #3D5A80; }
+  .legend .sw-red { background: #C0625F; }
+  .legend .sw-gray { background: #B8B2A8; }
+
+  .replay-btn {
+    margin-top: 20px; padding: 8px 24px;
+    border: 1px solid #E8E4DE; border-radius: 20px;
+    background: transparent; color: #8B8680;
+    font-family: 'Inter', sans-serif; font-size: 0.75rem;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .replay-btn:hover { border-color: #3D5A80; color: #3D5A80; }
+  .tag { font-size: 0.68rem; color: #B8B2A8; margin-top: 32px; font-family: 'Inter', sans-serif; }
+</style>
+</head>
+<body>
+  <h2>DMR-ML 策略原理</h2>
+  <p class="subtitle">方案 B · 双线博弈 Dual Race</p>
+
+  <div class="anim-container playing" id="anim">
+    <svg viewBox="0 0 520 340" xmlns="http://www.w3.org/2000/svg">
+
+      <!-- Background grid -->
+      <g opacity="0.3">
+        <line x1="60" y1="40" x2="60" y2="230" stroke="#E8E4DE" stroke-width="0.5"/>
+        <line x1="60" y1="230" x2="480" y2="230" stroke="#E8E4DE" stroke-width="0.5"/>
+        <line x1="60" y1="80" x2="480" y2="80" stroke="#E8E4DE" stroke-width="0.5" stroke-dasharray="3,4"/>
+        <line x1="60" y1="130" x2="480" y2="130" stroke="#E8E4DE" stroke-width="0.5" stroke-dasharray="3,4"/>
+        <line x1="60" y1="180" x2="480" y2="180" stroke="#E8E4DE" stroke-width="0.5" stroke-dasharray="3,4"/>
+      </g>
+
+      <!-- Axis labels -->
+      <text class="axis-label" x="56" y="84" text-anchor="end">强</text>
+      <text class="axis-label" x="56" y="184" text-anchor="end">弱</text>
+      <text class="axis-label" x="56" y="234" text-anchor="end">0</text>
+      <text class="axis-label" x="270" y="248" text-anchor="middle">时间 →</text>
+
+      <!-- Phase dividers -->
+      <line x1="300" y1="35" x2="300" y2="235" stroke="#E8E4DE" stroke-width="1" stroke-dasharray="4,4" class="fade-in fade-2"/>
+      <line x1="400" y1="35" x2="400" y2="235" stroke="#E8E4DE" stroke-width="1" stroke-dasharray="4,4" class="fade-in fade-3"/>
+
+      <!-- Phase headers -->
+      <g class="fade-in fade-1">
+        <text class="phase-label" x="180" y="28">① 动量比较</text>
+      </g>
+      <g class="fade-in fade-2">
+        <text class="phase-label" x="350" y="28" text-anchor="middle" fill="#3D5A80">② 胜出</text>
+      </g>
+      <g class="fade-in fade-3">
+        <text class="phase-label" x="440" y="28" text-anchor="middle" fill="#C0625F">③ ML门禁</text>
+      </g>
+
+      <!-- CSI 300 line (weaker, ends lower) -->
+      <path class="line-300"
+            d="M 60 170 C 90 165, 100 155, 120 160 C 150 168, 170 150, 200 145 C 230 140, 250 155, 280 158 C 300 160, 330 152, 360 148 C 380 145, 410 150, 440 155 L 470 158"
+            stroke="#B8B2A8" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+      <!-- CSI 1000 line (stronger, ends higher) -->
+      <path class="line-1000"
+            d="M 60 175 C 90 160, 110 140, 130 125 C 160 105, 180 115, 210 100 C 240 88, 260 95, 290 82 C 310 75, 340 70, 370 65 C 400 60, 430 68, 460 72 L 470 74"
+            stroke="#3D5A80" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+      <!-- Winner glow (thick blur behind 1000 line) -->
+      <path class="winner-glow"
+            d="M 60 175 C 90 160, 110 140, 130 125 C 160 105, 180 115, 210 100 C 240 88, 260 95, 290 82 C 310 75, 340 70, 370 65 C 400 60, 430 68, 460 72 L 470 74"
+            stroke="#3D5A80" stroke-width="14" fill="none" stroke-linecap="round" filter="url(#blur)"/>
+
+      <!-- SVG filter for glow -->
+      <defs>
+        <filter id="blur"><feGaussianBlur stdDeviation="4"/></filter>
+      </defs>
+
+      <!-- Winner label -->
+      <g class="winner-label">
+        <rect x="290" y="55" width="80" height="20" rx="10" fill="#3D5A80" opacity="0.1"/>
+        <text x="330" y="69" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#3D5A80" font-weight="600">中证1000 ✓</text>
+      </g>
+
+      <!-- Loser label -->
+      <g class="winner-label">
+        <text x="360" y="162" text-anchor="middle" font-family="Inter,sans-serif" font-size="9.5" fill="#B8B2A8">沪深300</text>
+      </g>
+
+      <!-- ML Gate zone -->
+      <g class="ml-gate">
+        <rect x="398" y="38" width="84" height="198" rx="4" fill="#C0625F" opacity="0.04" stroke="#C0625F" stroke-width="1" stroke-dasharray="4,3"/>
+        <!-- Shield icon -->
+        <g transform="translate(440, 200)">
+          <path d="M 0 -10 L 9 -6 L 9 3 C 9 9, 0 13, 0 13 C 0 13, -9 9, -9 3 L -9 -6 Z"
+                fill="none" stroke="#C0625F" stroke-width="1.2"/>
+          <text x="0" y="1" text-anchor="middle" font-family="Georgia" font-size="7" fill="#C0625F" font-weight="700">ML</text>
+        </g>
+        <text x="440" y="226" text-anchor="middle" font-family="Inter,sans-serif" font-size="8.5" fill="#C0625F">风险概率 32%</text>
+      </g>
+
+      <!-- Scan line -->
+      <rect class="scan-line" x="400" y="38" width="2" height="198" rx="1" fill="#C0625F" opacity="0"/>
+
+      <!-- Result badge -->
+      <g class="result-badge result-pass" transform="translate(440, 275)">
+        <rect x="-52" y="-14" width="104" height="28" rx="14" fill="#3D5A80" opacity="0.08" stroke="#3D5A80" stroke-width="1"/>
+        <text x="0" y="4" text-anchor="middle" font-family="Georgia" font-size="11" fill="#3D5A80" font-weight="700">→ 持有中证1000</text>
+      </g>
+
+      <!-- Phase description at bottom -->
+      <g class="fade-in fade-4">
+        <text class="phase-sub" x="180" y="320" text-anchor="middle">比较两个指数的近期动量强弱</text>
+        <text class="phase-sub" x="440" y="320" text-anchor="middle">ML 模型评估风险，低于阈值则放行</text>
+      </g>
+
+    </svg>
+  </div>
+
+  <div class="legend">
+    <span><span class="swatch sw-blue"></span>中证1000 动量</span>
+    <span><span class="swatch sw-gray"></span>沪深300 动量</span>
+    <span><span class="swatch sw-red"></span>ML 风控区域</span>
+  </div>
+
+  <button class="replay-btn" onclick="replay()">重播动画</button>
+  <p class="tag">方案 B · 双线博弈 · 直观展示两条指数的动量赛跑与ML风控过滤</p>
+
+<script>
+function replay() {
+  const el = document.getElementById('anim');
+  el.classList.remove('playing');
+  void el.offsetWidth;
+  el.classList.add('playing');
+}
+</script>
+</body>
+</html>

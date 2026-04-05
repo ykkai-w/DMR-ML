@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DMR-ML</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v=2">
+    <link href="https://fonts.loli.net/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css?v=51">
+    <script src="/static/vendor/plotly-2.35.2.min.js"></script>
+    <script src="/static/vendor/tsparticles.engine.min.js"></script>
+    <script src="/static/vendor/tsparticles.slim.bundle.min.js"></script>
+</head>
+<body>
+    <script>if(localStorage.getItem('dmr-dark-mode')==='true')document.body.classList.add('dark-mode');</script>
+    <!-- 呼吸渐变背景 -->
+    <div id="breathing-bg"></div>
+    <!-- 粒子背景 -->
+    <div id="particles-bg"></div>
+
+    <!-- 加载动画 -->
+    <div id="dmr-loader" class="dmr-loader">
+        <div id="loader-particles" class="loader-particles"></div>
+        <div class="dmr-loader__content">
+            <svg class="dmr-loader__svg" viewBox="0 0 120 140" xmlns="http://www.w3.org/2000/svg">
+                <path class="dmr-glow" d="M10 70 L35 70 L45 25 L55 90 L65 45 L75 70 L110 70" stroke="var(--dmr-red)" stroke-width="16" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                <path class="dmr-line-blue" d="M10 70 L35 70 L45 25 L55 90 L65 45 L75 70 L110 70" stroke="var(--dmr-blue)" stroke-width="4.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                <path class="dmr-line-red" d="M10 70 L35 70 L45 25 L55 90 L65 45 L75 70 L110 70" stroke="var(--dmr-red)" stroke-width="4.5" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(6, 4)"/>
+                <circle class="dmr-dot-blue" r="4" fill="var(--dmr-blue)"/>
+                <circle class="dmr-dot-red" r="3.5" fill="var(--dmr-red)"/>
+                <text class="dmr-brand" x="60" y="120" text-anchor="middle" fill="var(--dmr-text)">DMR-ML</text>
+            </svg>
+            <p class="dmr-loader-tagline">欢迎使用 · 数据加载中</p>
+        </div>
+    </div>
+
+    <!-- 汉堡菜单按钮 -->
+    <button id="sidebar-toggle" onclick="toggleSidebar()" aria-label="菜单">
+        <span class="bar"></span>
+        <span class="bar"></span>
+        <span class="bar"></span>
+    </button>
+
+    <!-- 遮罩层 -->
+    <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <!-- 侧边栏 -->
+    <aside id="sidebar">
+        <div class="sidebar-header">
+            <svg class="sidebar-logo" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+                <path d="M10 70 L35 70 L45 25 L55 90 L65 45 L75 70 L110 70" stroke="#C0625F" stroke-width="16" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.09"/>
+                <path d="M10 70 L35 70 L45 25 L55 90 L65 45 L75 70 L110 70" stroke="#3D5A80" stroke-width="4.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M10 70 L35 70 L45 25 L55 90 L65 45 L75 70 L110 70" stroke="#C0625F" stroke-width="4.5" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.5" transform="translate(6, 4)"/>
+            </svg>
+            <span class="sidebar-title">DMR-ML</span>
+        </div>
+
+        <div class="sidebar-section"
+             data-guide-title="模型切换"
+             data-guide-desc="Adagio 稳健低回撤、Presto 灵敏搏收益，均为预设最优参数。Rubato 可自定义下方滑杆参数，调整后点击「确认参数 · 刷新数据」生效">
+            <div class="sidebar-section-title">模型切换</div>
+            <div class="sidebar-model-tabs" id="sidebar-model-tabs">
+                <button class="sidebar-model-tab selected" data-model="adagio" onclick="selectModelSidebar('adagio')">Adagio</button>
+                <button class="sidebar-model-tab" data-model="presto" onclick="selectModelSidebar('presto')">Presto</button>
+                <button class="sidebar-model-tab" data-model="rubato" onclick="selectModelSidebar('rubato')">Rubato</button>
+            </div>
+            <p class="param-hint" id="sidebar-model-hint">稳健低回撤 · 预设最优参数</p>
+        </div>
+
+        <div class="sidebar-divider"></div>
+
+        <div class="sidebar-section"
+             data-guide-title="策略参数"
+             data-guide-desc="动量窗口控制回溯天数（推荐15-25），均线窗口控制趋势判断周期（推荐10-20）"
+             data-guide-content="动量窗口，算动量时往回看几天。调大了更平滑、反应慢但稳，调小了更灵敏、但容易受噪声干扰。推荐15-25。均线窗口，用几天均线来确认趋势方向，跟动量配合使用。推荐10-20。">
+            <div class="sidebar-section-title">策略参数</div>
+            <label class="param-label">
+                动量窗口
+                <span class="param-value" id="momentum-value">20</span>
+            </label>
+            <input type="range" id="momentum-window" min="10" max="40" step="5" value="20">
+
+            <label class="param-label">
+                均线窗口
+                <span class="param-value" id="ma-value">14</span>
+            </label>
+            <input type="range" id="ma-window" min="4" max="30" step="2" value="14">
+        </div>
+
+        <div class="sidebar-divider"></div>
+
+        <div class="sidebar-section"
+             data-guide-title="ML 风险阈值"
+             data-guide-desc="风险概率超过触发阈值（40%）就避险，低于解除阈值（33%）才恢复交易，中间留缓冲区防反复横跳"
+             data-guide-content="触发阈值，ML模型判断风险概率超过这个值时强制清仓转现金，默认40%。解除阈值，风险概率降到这个值以下才重新开始交易，默认33%。两条线之间是缓冲区，不设缓冲的话概率在临界值附近波动会导致频繁进出，白交手续费。">
+            <div class="sidebar-section-title">ML 风险阈值</div>
+            <label class="param-label">
+                触发阈值
+                <span class="param-value" id="trigger-value">40%</span>
+            </label>
+            <input type="range" id="risk-trigger" min="30" max="60" step="5" value="40">
+
+            <label class="param-label">
+                解除阈值
+                <span class="param-value" id="release-value">33%</span>
+            </label>
+            <input type="range" id="risk-release" min="23" max="43" step="5" value="33">
+        </div>
+
+        <button class="sidebar-btn" id="refresh-btn" onclick="refreshData()">确认参数 · 刷新数据</button>
+
+        <div class="sidebar-divider"></div>
+
+        <div class="sidebar-section">
+            <div class="sidebar-section-title">显示设置</div>
+            <label class="checkbox-label">
+                <span class="toggle-switch"><input type="checkbox" id="show-dmr" checked><span class="toggle-slider"></span></span>
+                显示 DMR 策略对比
+            </label>
+            <label class="checkbox-label">
+                <span class="toggle-switch"><input type="checkbox" id="show-bench" checked><span class="toggle-slider"></span></span>
+                显示沪深300基准
+            </label>
+            <label class="checkbox-label">
+                <span class="toggle-switch"><input type="checkbox" id="log-scale" checked><span class="toggle-slider"></span></span>
+                对数坐标
+            </label>
+            <p class="param-hint">上述选项仅影响净值走势图</p>
+            <div style="margin-top:12px;"></div>
+            <label class="checkbox-label">
+                <span class="toggle-switch"><input type="checkbox" id="guide-mode" checked><span class="toggle-slider"></span></span>
+                指导模式
+            </label>
+            <p class="param-hint">开启后鼠标悬停显示解释</p>
+            <div style="margin-top:12px;"></div>
+            <label class="checkbox-label">
+                <span class="toggle-switch"><input type="checkbox" id="dark-mode-toggle"><span class="toggle-slider"></span></span>
+                深色模式
+            </label>
+        </div>
+
+        <div class="sidebar-divider"></div>
+
+        <details class="sidebar-details">
+            <summary>关于 DMR-ML</summary>
+            <div class="details-content dev-letter">
+                <button class="sidebar-btn" onclick="openAnimModal()" style="margin-bottom:14px;">策略原理 · 动态图解</button>
+                <p class="dt"><strong>一句话概括</strong></p>
+                <p>DMR-ML = DMR（双重动量轮动）+ ML（机器学习风险门禁）。前半段负责决定"买什么"，后半段负责判断"现在该不该买"。</p>
+
+                <p class="dt"><strong>什么是双重动量</strong></p>
+                <p>"动量"的意思很朴素：过去一段时间涨得好的资产，短期内继续涨的概率往往更高。这是学术界研究较为充分的市场异象之一，我们的策略正是基于这一规律构建的。</p>
+                <p>我们同时跟踪沪深300和中证1000这两个宽基指数的动量，哪个更强就持有哪个，这就是"轮动"。如果两个都在跌，说明市场整体走弱，那就都不持有，转为现金等待。</p>
+                <p>选择宽基指数而不是个股，有几个考虑。一是操作简便，对应的ETF和指数基金都非常成熟，流动性好、费率低、任何人都可以直接买卖。二是分散了个股风险，我们赚的是市场整体的Beta收益（跟随市场涨跌的那部分），然后通过择时来决定什么时候参与、什么时候离场。本质上这是一个择时策略，不做选股。</p>
+
+                <p class="dt"><strong>ML风险门禁</strong></p>
+                <p>机器学习是一类让计算机从大量历史数据中自动提取规律的方法。与传统的手动编写规则不同，我们将过去的市场数据输入模型，由模型自行学习哪些特征组合往往预示着下行风险。</p>
+                <p>光靠动量有时会在市场剧烈转向时反应不够快，所以我们加了这一层ML模型作为门禁。它会根据近期的市场特征（波动率、成交量变化、技术指标等），估算未来出现大幅下跌的概率。如果这个概率超过了设定的阈值，无论动量信号怎么说，都强制清仓避险。可以把它理解成一个额外的安全阀，动量说"可以买"，但风控说"现在太危险"，那就不买。</p>
+                <p>在回测中对比同参数下开启和关闭ML模块的表现，加入ML之后年化收益提升了约3-5%，最大回撤降低了约6%，夏普比率也有明显改善。不过客观来看，改善的主要来源不是"赚得更多"，而是"亏得更少"。风险门禁在几次大幅下跌前提前触发了空仓信号，少亏的部分积累起来就变成了超额收益。</p>
+                <p>关于阈值，我们用的是双阈值迟滞机制，触发线40%、解除线33%。为什么不是一条线？因为如果只设一条线，概率在临界值附近反复波动时，策略就会频繁进出，既增加了手续费成本，也增加了操作难度。两条线之间留一段缓冲区，只有风险概率真正降到足够低才恢复交易。</p>
+
+                <p class="dt"><strong>为什么选随机森林</strong></p>
+                <p>随机森林是一种常见的机器学习模型。它会生成很多棵"决策树"，每棵树用略有不同的数据子集和特征子集来做判断，最后把所有树的结果汇总投票，少数服从多数。这种方式让单棵树的判断失误不容易影响整体结论，稳定性比较好。</p>
+                <p>在搭建ML模块的过程中，我们比较了逻辑回归、SVM、XGBoost、LightGBM、随机森林等多种模型，最终发现随机森林在我们的场景下表现最稳定。它对过拟合的抵抗力较好，不需要太精细的调参，在不同市场环境下的泛化能力比较一致。不是说其他模型不行，只是随机森林在稳定性上的优势最明显。</p>
+                <p>当前配置是100棵决策树、最大深度限制为5层。深度限制意味着每棵树不会学得太细，这是刻意为之。模型越复杂，越容易把历史数据中的噪声也当成规律来记忆，也就是过拟合，表现为回测结果很好看，但面对新数据时效果明显下降。我们宁可模型简单一些，也希望它在实际运行中的表现和回测中看到的尽量一致。</p>
+
+                <p class="dt"><strong>Purged Walk-Forward 训练</strong></p>
+                <p>这是模型的训练方式。我们不会拿未来的数据去训练模型然后回头"预测"过去，那样的回测结果没有参考价值。Purged Walk-Forward 的做法是按时间顺序滚动：用过去的数据训练，只预测紧接着的未来，然后窗口往前滑，重复这个过程。"Purged"是指在训练集和测试集之间还额外删掉一段数据，防止标签泄露（因为我们的标签是用未来收益算出来的，如果训练集末尾和测试集开头离得太近，信息会渗透过去）。这套流程比较严格，目的是让回测结果尽可能接近真实世界的表现。</p>
+
+                <p class="dt"><strong>交易成本模拟</strong></p>
+                <p>回测中我们尽量贴合实际交易去模拟成本。目前的设定是：每次买入或卖出扣除0.03%的手续费。如果是从一个指数直接切换到另一个指数（比如沪深300换到中证1000），相当于先卖后买，手续费按两笔计算共0.06%。持有现金期间按年化3%的无风险利率计入收益。ETF交易目前免征印花税，所以回测中没有单独模拟这一项。宽基ETF的日均成交量通常在数十亿以上，流动性很充裕，实际买卖时的价格偏差（滑点）极小，回测中暂未额外扣除。整体而言，这套成本假设是比较保守和贴近现实的。</p>
+
+                <p class="dt"><strong>关于回测</strong></p>
+                <p>回测就是用历史数据模拟策略运行的过程，假设从某一天开始执行这套规则，到今天为止会是什么结果。它的价值在于验证策略逻辑是否在过去站得住脚，但要注意：过去有效不等于未来一定有效，回测结果天然会比实盘乐观一些。</p>
+                <p>起始时间选在2019年1月，主要有两个原因。一是中证1000指数在2018年底之前的数据质量和可投资性都不太理想；二是2019年至今的市场经历了牛市、熊市、震荡市，样本覆盖得比较全面。更早的数据当然可以跑，但参考价值会打折扣。</p>
+
+                <p class="dt"><strong>实际怎么操作</strong></p>
+                <p>策略每天收盘后计算一次信号，在下一个交易日开盘前通过邮件推送。信号只有两种：买入（持有某个指数）或卖出（转为现金）。收到信号后，在开盘时买入或卖出对应的指数基金即可。沪深300对应的ETF很多（比如510300、159919），中证1000同理（比如560010、159845），选费率低、规模大的就好。</p>
+                <p>我们的策略是全仓切换：信号说买沪深300就全部仓位买沪深300，说切到中证1000就全部换过去，说卖出就全部转为现金。在开发过程中，我们也尝试过半仓、三分之一仓、五分之一仓等分批调仓的方案，但回测结果显示分仓反而不如全仓切换。可能的原因是，动量策略的核心逻辑就是"强者恒强"，分散仓位等于在确信的方向上打了折扣，稀释了信号的有效性。全仓切换的另一个好处是操作极其简单，信号明确、没有模糊地带，不需要纠结"这次该调多少"，也有效降低了执行时的心理负担。</p>
+                <p>有一点值得提前说明：趋势跟踪策略天然有一定的滞后性。信号需要等趋势形成后才会触发，这意味着买入时往往不是最低点，卖出时也不是最高点。这是动量策略结构上的特点，不是可以通过调参消除的缺陷。如果把这个模型理解为一个<strong>下行风险过滤器</strong>，而非追求极致收益的进攻型系统，使用起来会更顺手一些。</p>
+
+                <p class="dt"><strong>你不必完全照做</strong></p>
+                <p>以上是策略本身的运行方式，但你完全可以根据自己的判断灵活使用。比如信号显示持有中证1000，你可以把它理解为"当前小盘股相对更强"，作为自己选股或配置的参考；信号转为现金避险，你可以据此降低仓位而不必清仓。这个工具提供的是一个视角，最终如何决策，还是取决于你自己的判断。</p>
+                <p>坦白说，这个策略倡导的是一种相对保守、纪律优先的思路：在不确定的时候宁可少赚，也不冒额外的风险。这是我个人在搭建它时的出发点，但每个人对风险和收益的权衡都不一样，这里提供的只是一个可供参考的框架。</p>
+            </div>
+        </details>
+
+        <details class="sidebar-details">
+            <summary>每日信号推送</summary>
+            <div class="details-content">
+                <p>每日A股开盘前推送：<br>操作信号 · ML风险概率 · 市场风格判断</p>
+                <div style="margin-top:10px;">
+                    <input type="email" id="subscribe-email" placeholder="your@email.com" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:12px;font-size:0.8rem;margin-bottom:8px;font-family:'Inter',-apple-system,sans-serif;box-sizing:border-box;outline:none;">
+                    <select id="subscribe-model" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:12px;font-size:0.8rem;margin-bottom:8px;font-family:'Inter',-apple-system,sans-serif;background:var(--bg-card);">
+                        <option value="adagio" selected>Adagio · 稳健低回撤</option>
+                        <option value="presto">Presto · 灵敏搏收益</option>
+                    </select>
+                    <select id="subscribe-time" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:12px;font-size:0.8rem;margin-bottom:10px;font-family:'Inter',-apple-system,sans-serif;background:var(--bg-card);">
+                        <option value="07:30">07:30 推送</option>
+                        <option value="08:00" selected>08:00 推送</option>
+                        <option value="08:30">08:30 推送</option>
+                        <option value="09:00">09:00 推送</option>
+                    </select>
+                    <button class="sidebar-btn" onclick="subscribeEmail()">订阅</button>
+                    <p id="subscribe-msg" style="font-size:0.72rem;margin-top:6px;display:none;"></p>
+                </div>
+                <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+                    <p class="param-hint">不想收到邮件了？可以自助取消订阅</p>
+                    <input type="email" id="unsubscribe-email" placeholder="your@email.com" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:12px;font-size:0.8rem;margin-top:6px;margin-bottom:8px;font-family:'Inter',-apple-system,sans-serif;box-sizing:border-box;outline:none;">
+                    <button class="sidebar-btn" onclick="unsubscribeEmail()">取消订阅</button>
+                    <p id="unsubscribe-msg" style="font-size:0.72rem;margin-top:6px;display:none;"></p>
+                </div>
+            </div>
+        </details>
+
+        <details class="sidebar-details">
+            <summary>关于开发者</summary>
+            <div class="details-content">
+                <p><strong>ykkai-w</strong>（个人运营）</p>
+                <p><strong>Kai</strong> &middot; CAU 金融学 &amp; 数据科学 在读</p>
+                <hr>
+                <p>联系方式：ykai.w@outlook.com</p>
+                <p>GitHub：github.com/ykkai-w</p>
+            </div>
+        </details>
+
+        <details class="sidebar-details">
+            <summary>致使用者</summary>
+            <div class="details-content dev-letter">
+                <p>你好，感谢你打开这个页面。</p>
+                <p>DMR-ML 是我在学习量化投资过程中做的一个小项目。它的核心思路并不复杂——用双重动量在沪深300和中证1000之间轮动，再用一层机器学习模型做风险门禁。选这两个宽基指数，是因为它们有对应的ETF和指数基金，任何人都可以低成本地跟随操作。</p>
+                <p>坦率地说，这个策略并不完美。如果你翻看第五页的逐笔交易记录，会发现它并非每次都能精准地买在谷底、卖在峰顶——趋势跟踪策略天然会有一定的滞后性，有时信号确认时，最佳入场点已经过去了。这是动量策略的固有局限，我不想回避这一点。</p>
+                <p>但它确实有做得不错的地方。从2019年至今的回测来看，策略最大的优势在于熊市中的避险能力。ML风险门禁在多次大幅下跌前触发了空仓信号——在A股这样的市场里，不亏本身就是一种超额收益。回测中相当一部分累计收益，其实来自"别人在跌的时候我们没有在场"。我个人认为，这个模型更适合被理解为一个<strong>下行风险过滤器</strong>，而非一个追求极致进攻的交易系统。</p>
+                <p>关于未来，有一些我想做但尚未实现的事情：接入更多标的（行业ETF、贵金属等避险资产），设计真正不同策略逻辑的模型组合——目前 Adagio（柔板）和 Presto（急板）只是参数不同，底层策略是一致的，我希望将来能有"不同乐章"。也在考虑更及时的信号推送方式。</p>
+                <p>整个项目已经开源在 GitHub 上。如果你有兴趣，完全可以 fork 一份，自行调整参数，或者搭配 OpenClaw 接入微信、飞书以及 iMessage 等平台做每日推送，让信号自动送达手边，在此基础上构建你自己的策略。用这个网站的邮件订阅和参数面板当然也可以，但我更希望它是一个起点，而不是终点。</p>
+                <p>最后想说的是，任何模型都只是辅助判断的工具，不能替代你自己的思考。策略倡导的是一种长期主义——坚定地执行纪律，接受短期的不完美。但在真实的投资决策中，每个人都有自己的处境和判断，模型仅供参考。</p>
+                <p>如果这个小工具对你有哪怕一点点帮助，或者激发了你对量化投资的兴趣，那就是我做这件事最大的回报了。</p>
+                <p class="sign" style="text-align:right;color:var(--text-muted);margin-top:12px;">Kai<br>2026 年春</p>
+            </div>
+        </details>
+
+        <div class="sidebar-divider"></div>
+
+        <details class="sidebar-details">
+            <summary>管理后台</summary>
+            <div class="details-content">
+                <a href="/admin" class="sidebar-btn" style="display:block;text-align:center;text-decoration:none;">进入管理</a>
+            </div>
+        </details>
+
+        <div class="sidebar-footer">
+            <p><strong>DMR-ML</strong></p>
+            <p>&copy; 2026 ykkai-w</p>
+        </div>
+    </aside>
+
+    <!-- 全局固定头部 -->
+    <header id="global-header">
+        <div class="gh-left">
+            <div class="gh-title-block">
+                <div class="gh-title-row">
+                    <h1 class="site-title">DMR-ML</h1>
+                    <div class="model-switcher" id="model-switcher"
+                         data-guide-title="模型切换"
+                         data-guide-desc="三个模型取名自音乐术语。Adagio（柔板）动量20天，稳健低回撤；Presto（急板）动量10天，灵敏搏收益；Rubato（自由）可在左侧自定义参数。三者共用同一套ML风控">
+                        <button class="model-switcher__btn" id="model-switcher-btn" onclick="toggleModelMenu()">
+                            <span class="model-switcher__name" id="model-current-name">Adagio</span>
+                            <svg class="model-switcher__arrow" width="10" height="6" viewBox="0 0 10 6" fill="none">
+                                <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                        <div class="model-switcher__menu" id="model-menu">
+                            <div class="model-option selected" data-model="adagio" onclick="selectModel('adagio')">
+                                <div class="model-option__info">
+                                    <span class="model-option__name">Adagio</span>
+                                    <span class="model-option__desc">柔板 · 稳健</span>
+                                </div>
+                                <svg class="model-option__check" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                    <path d="M3 8.5L6.5 12L13 4" stroke="var(--secondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                            <div class="model-option" data-model="presto" onclick="selectModel('presto')">
+                                <div class="model-option__info">
+                                    <span class="model-option__name">Presto</span>
+                                    <span class="model-option__desc">急板 · 激进</span>
+                                </div>
+                                <svg class="model-option__check" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                    <path d="M3 8.5L6.5 12L13 4" stroke="var(--secondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                            <div class="model-option" data-model="rubato" onclick="selectModel('rubato')">
+                                <div class="model-option__info">
+                                    <span class="model-option__name">Rubato</span>
+                                    <span class="model-option__desc">自由 · 自定义参数</span>
+                                </div>
+                                <svg class="model-option__check" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                    <path d="M3 8.5L6.5 12L13 4" stroke="var(--secondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <p class="site-subtitle">基于机器学习的双重动量指数轮动策略</p>
+            </div>
+            <div class="status-badge" id="status-badge">
+                <span class="status-dot"></span>
+                <span class="status-text" id="status-text">加载中...</span>
+            </div>
+        </div>
+        <div class="gh-right">
+            <div class="guide-panel" id="guide-panel">
+                <div class="guide-panel__title" id="guide-panel-title"></div>
+                <div class="guide-panel__sep"></div>
+                <div class="guide-panel__desc" id="guide-panel-desc"></div>
+                <div class="guide-panel__range" id="guide-panel-range" style="display:none">
+                    <div class="guide-panel__bar">
+                        <div class="guide-panel__bar-fill" id="guide-panel-bar-fill"></div>
+                    </div>
+                    <span id="guide-panel-range-label"></span>
+                </div>
+                <div class="guide-panel__tail"></div>
+            </div>
+            <div class="mascot-anchor" id="mascotAnchor" role="img" aria-label="像素风马尔济斯小狗">
+            </div>
+
+        </div>
+    </header>
+
+    <!-- 主内容区（滚动吸附容器） -->
+    <main id="main-content">
+
+        <!-- Section 01: 策略概览 -->
+        <section class="content-section" id="section-overview">
+            <div class="section-eyebrow">
+                <span class="section-marker">01</span>
+                <span class="section-label">策略概览</span>
+            </div>
+
+            <div class="metrics-grid" id="overview-metrics">
+                <!-- JS 填充 -->
+            </div>
+
+            <div class="chart-container"
+                 data-guide-title="策略净值走势图"
+                 data-guide-desc="红线=DMR-ML策略，蓝线=纯DMR（不含ML风控），灰线=沪深300基准。三条线拉开得越大，超额收益越明显"
+                 data-guide-content="蓝线是完整的DMR-ML策略净值，红线是去掉ML风控后的纯动量策略，灰线是沪深300买入持有。对比红线和蓝线能看出ML风控的增量价值，对比蓝线和灰线能看策略整体跑赢基准多少。纵轴默认用对数坐标，看长期复利增长更直观。">
+                <div id="chart-equity" class="chart-box"></div>
+            </div>
+
+            <!-- 首屏滚动提示 -->
+            <div class="scroll-hint" id="scroll-hint">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            </div>
+        </section>
+
+        <!-- Section 02: 今日信号 -->
+        <section class="content-section" id="section-signal">
+            <div class="section-eyebrow">
+                <span class="section-marker">02</span>
+                <span class="section-label">今日信号</span>
+            </div>
+
+            <div class="signal-layout">
+                <div class="signal-left">
+                    <div class="signal-card" id="signal-card"
+                         data-guide-title="今日操作信号"
+                         data-guide-desc="每天收盘后自动计算。绿色=买入看多，红色=卖出避险，由动量方向和ML风控共同决定">
+                        <!-- JS 填充 -->
+                    </div>
+                    <a class="signal-learn-more" onclick="openAboutDMR()">查看策略方法论说明与信号含义详解 →</a>
+
+                    <div class="indicator-grid" id="indicator-cards"
+                         data-guide-title="技术指标面板"
+                         data-guide-desc="动量>0说明处于上升趋势，偏离度为正说明价格在均线上方。两个指数都算一遍，哪个更强就拿哪个">
+                        <!-- JS 填充 -->
+                    </div>
+                </div>
+
+                <div class="signal-right">
+                    <div class="info-box" id="signal-info"
+                         data-guide-title="决策推理"
+                         data-guide-desc="先看双重动量选方向，再过ML风险关卡。如果风险概率过高，无论动量信号如何都强制避险">
+                        <!-- JS 填充 -->
+                    </div>
+
+                    <div class="risk-gauge" id="risk-gauge"
+                         data-guide-title="ML 风险概率仪表盘"
+                         data-guide-desc="ML模型输出的风险概率。0-33%放心拿着，33-40%保持关注，40%以上自动清仓避险">
+                        <!-- JS 填充 -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 03: 深度分析 -->
+        <section class="content-section" id="section-analysis">
+            <div class="section-eyebrow">
+                <span class="section-marker">03</span>
+                <span class="section-label">深度分析</span>
+            </div>
+
+            <div class="tab-bar">
+                <button class="tab-btn active" data-tab="drawdown">回撤分析</button>
+                <button class="tab-btn" data-tab="heatmap">月度收益</button>
+                <button class="tab-btn" data-tab="distribution">收益分布</button>
+                <button class="tab-btn" data-tab="sharpe">滚动夏普</button>
+            </div>
+
+            <div class="analysis-chart-area">
+                <div class="tab-content">
+                    <div class="tab-pane active" id="tab-drawdown"
+                         data-guide-title="回撤分析图"
+                         data-guide-desc="当前净值离历史最高点跌了多少。-10%以内算控得不错，-20%以内还能接受">
+                        <div id="chart-drawdown" class="chart-box"></div>
+                    </div>
+                    <div class="tab-pane" id="tab-heatmap"
+                         data-guide-title="月度收益热力图"
+                         data-guide-desc="每个格子是一个月的收益率，红赚绿亏。可以观察不同月份的收益规律和策略表现的稳定性">
+                        <div id="chart-heatmap" class="chart-box"></div>
+                    </div>
+                    <div class="tab-pane" id="tab-distribution"
+                         data-guide-title="收益分布图"
+                         data-guide-desc="每日收益率的分布。理想情况是整体偏右（均值为正），左尾不要太长（极端亏损少）">
+                        <div id="chart-distribution" class="chart-box"></div>
+                    </div>
+                    <div class="tab-pane" id="tab-sharpe"
+                         data-guide-title="滚动夏普比率"
+                         data-guide-desc="用滑动窗口计算的夏普比率走势。>1不错，>2很强，长期保持在0以上说明策略持续有效">
+                        <div id="chart-sharpe" class="chart-box"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 04: 交易记录 -->
+        <section class="content-section" id="section-trades">
+            <div class="section-eyebrow">
+                <span class="section-marker">04</span>
+                <span class="section-label">交易记录</span>
+            </div>
+
+            <div class="metrics-grid" id="trade-metrics"
+                 data-guide-title="交易统计卡片"
+                 data-guide-desc="交易次数、平均持仓天数、盈亏比等核心统计。盈亏比>2说明盈利交易的幅度明显大于亏损交易">
+                <!-- JS 填充 -->
+            </div>
+
+            <div class="allocation-table-wrapper"
+                 data-guide-title="年度持仓分配表"
+                 data-guide-desc="每年在沪深300、中证1000、现金之间的持仓分配。现金占比高的年份，说明风控在主动回避下行风险">
+                <table class="allocation-table" id="allocation-table">
+                    <!-- JS 填充 -->
+                </table>
+            </div>
+        </section>
+
+        <!-- Section 05: 交易信号 -->
+        <section class="content-section" id="section-chart">
+            <div class="section-eyebrow">
+                <span class="section-marker">05</span>
+                <span class="section-label">交易信号</span>
+            </div>
+
+            <div class="trade-controls">
+                <select id="trade-year">
+                    <option value="2026">2026</option>
+                    <option value="2025">2025</option>
+                    <option value="2024">2024</option>
+                    <option value="2023">2023</option>
+                    <option value="2022">2022</option>
+                    <option value="2021">2021</option>
+                    <option value="2020">2020</option>
+                    <option value="2019">2019</option>
+                </select>
+                <select id="trade-asset">
+                    <option value="1000">中证1000</option>
+                    <option value="300">沪深300</option>
+                </select>
+            </div>
+
+            <div class="chart-container"
+                 data-guide-title="交易信号可视化"
+                 data-guide-desc="在价格走势图上标出买入（绿△）和卖出（红△），展示策略的进出场时点">
+                <div id="chart-trade-signals" class="chart-box"></div>
+            </div>
+
+            <footer class="site-footer">
+                <p><strong>风险提示</strong>：本策略基于历史数据回测，过往业绩不代表未来表现。投资有风险，决策需谨慎。</p>
+                <p>DMR-ML 机器学习量化交易系统 | &copy; 2026 ykkai-w</p>
+                <p class="icp-filing"><a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener">京ICP备2026015873号</a></p>
+            </footer>
+        </section>
+
+    </main>
+
+    <!-- 右侧点线导航 -->
+    <nav id="dot-nav">
+        <a class="dot-item active" data-section="section-overview">
+            <span class="dot-label">策略概览</span>
+            <span class="dot"></span>
+        </a>
+        <div class="dot-connector"></div>
+        <a class="dot-item" data-section="section-signal">
+            <span class="dot-label">今日信号</span>
+            <span class="dot"></span>
+        </a>
+        <div class="dot-connector"></div>
+        <a class="dot-item" data-section="section-analysis">
+            <span class="dot-label">深度分析</span>
+            <span class="dot"></span>
+        </a>
+        <div class="dot-connector"></div>
+        <a class="dot-item" data-section="section-trades">
+            <span class="dot-label">交易记录</span>
+            <span class="dot"></span>
+        </a>
+        <div class="dot-connector"></div>
+        <a class="dot-item" data-section="section-chart">
+            <span class="dot-label">交易信号</span>
+            <span class="dot"></span>
+        </a>
+    </nav>
+
+    <script src="/static/js/app.js?v=50"></script>
+    <script>
+    window.DMRLoader = (function () {
+        const ANIMATION_DURATION = 6000;
+        let _animationDone = false, _dataReady = false, _el = null, _tagline = null;
+        function _tryDismiss() {
+            if (_animationDone && _dataReady && _el) {
+                _el.classList.add('hidden');
+            }
+        }
+        return {
+            show: function (tagText) {
+                _animationDone = false; _dataReady = false;
+                _el = document.getElementById('dmr-loader');
+                if (!_el) return;
+                _tagline = _el.querySelector('.dmr-loader-tagline');
+                if (_tagline) _tagline.textContent = tagText || '欢迎使用 · 数据加载中';
+                _el.classList.remove('hidden', 'holding', 'playing');
+                requestAnimationFrame(() => _el.classList.add('playing'));
+                if (typeof tsParticles !== 'undefined') {
+                    tsParticles.load('loader-particles', {
+                        particles: {
+                            number: { value: 52, density: { enable: true, area: 800 } },
+                            color: { value: ['#A0403C', '#3D5A80', '#B8B2A8'] },
+                            opacity: { value: 0.18, random: { enable: true, minimumValue: 0.05 } },
+                            size: { value: 2.4, random: { enable: true, minimumValue: 0.8 } },
+                            move: { enable: true, speed: 0.6, direction: 'none', random: true, outModes: { default: 'out' } },
+                            links: { enable: true, distance: 150, color: '#B8B2A8', opacity: 0.12, width: 0.8 },
+                        },
+                        interactivity: {
+                            events: { onHover: { enable: true, mode: 'grab' } },
+                            modes: { grab: { distance: 180, links: { opacity: 0.3 } } },
+                        },
+                        detectRetina: true,
+                    });
+                }
+                setTimeout(() => {
+                    _animationDone = true;
+                    if (!_dataReady && _el) { _el.classList.remove('playing'); _el.classList.add('holding'); }
+                    _tryDismiss();
+                }, ANIMATION_DURATION);
+            },
+            dataReady: function () { _dataReady = true; _tryDismiss(); }
+        };
+    })();
+    </script>
+
+    <!-- 吉祥物：加载 SVG + 眼睛跟踪 -->
+    <script>
+    (function () {
+        fetch('/static/mascot-pixel.svg')
+            .then(r => r.text())
+            .then(svgText => {
+                var anchor = document.getElementById('mascotAnchor');
+                if (!anchor) return;
+                anchor.innerHTML = svgText;
+                var svg = anchor.querySelector('svg');
+                var pL = document.getElementById('pupil-left');
+                var pR = document.getElementById('pupil-right');
+                // 隐藏白色眼白，只保留黑色瞳孔
+                var sclL = document.getElementById('eye-left');
+                var sclR = document.getElementById('eye-right');
+                if (sclL) sclL.style.display = 'none';
+                if (sclR) sclR.style.display = 'none';
+                if (!svg || !pL || !pR) return;
+
+                var MAX = 1.5;
+                var eL = { cx: 61.5, cy: 50.5 };
+                var eR = { cx: 68.5, cy: 50.5 };
+                var mx = innerWidth / 2, my = innerHeight / 2, raf = null;
+
+                function toS(x, y) {
+                    var p = svg.createSVGPoint();
+                    p.x = x; p.y = y;
+                    var c = svg.getScreenCTM();
+                    if (!c) return { x: 64, y: 54 };
+                    return p.matrixTransform(c.inverse());
+                }
+                function off(sx, sy, ex, ey) {
+                    var dx = sx - ex, dy = sy - ey;
+                    var d = Math.sqrt(dx * dx + dy * dy) || 1;
+                    var r = Math.min(d / 12, MAX);
+                    return { x: (dx / d) * r, y: (dy / d) * r };
+                }
+                function tick() {
+                    var s = toS(mx, my);
+                    var oL = off(s.x, s.y, eL.cx, eL.cy);
+                    var oR = off(s.x, s.y, eR.cx, eR.cy);
+                    pL.style.transform = 'translate(' + oL.x + 'px,' + oL.y + 'px)';
+                    pR.style.transform = 'translate(' + oR.x + 'px,' + oR.y + 'px)';
+                    raf = null;
+                }
+                addEventListener('mousemove', function (e) {
+                    mx = e.clientX; my = e.clientY;
+                    if (!raf) raf = requestAnimationFrame(tick);
+                });
+                tick();
+
+                // 自动眨眼 — 控制黑色瞳孔（眼白已隐藏）
+                function doBlink() {
+                    pL.style.display = 'none';
+                    pR.style.display = 'none';
+                    setTimeout(function () {
+                        pL.style.display = '';
+                        pR.style.display = '';
+                    }, 150);
+                }
+                setInterval(doBlink, 4000);
+            });
+    })();
+    </script>
+<!-- Animation demo modal -->
+<div id="anim-modal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.35);backdrop-filter:blur(4px);opacity:0;transition:opacity 0.3s ease;">
+    <div style="position:absolute;inset:12px;background:#FAFAF7;border-radius:16px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,0.15);">
+        <iframe id="anim-iframe" src="" style="width:100%;height:100%;border:none;"></iframe>
+    </div>
+</div>
+<script>
+function openAnimModal(){
+    var m=document.getElementById('anim-modal');
+    var f=document.getElementById('anim-iframe');
+    f.src='/static/demo-anim-d.html';
+    m.style.display='block';
+    requestAnimationFrame(function(){m.style.opacity='1';});
+}
+function closeAnimModal(){
+    var m=document.getElementById('anim-modal');
+    m.style.opacity='0';
+    setTimeout(function(){m.style.display='none';document.getElementById('anim-iframe').src='';},300);
+}
+window.addEventListener('message',function(e){if(e.data==='closeAnimModal')closeAnimModal();});
+document.getElementById('anim-modal').addEventListener('click',function(e){if(e.target===this)closeAnimModal();});
+</script>
+<script>
+(function(){
+    if(window.location.hostname !== 'platform.dmrml.cn') return;
+    // 关于开发者 — 替换为团队信息
+    document.querySelectorAll('.sidebar-details').forEach(function(el){
+        var summary = el.querySelector('summary');
+        if(summary && summary.textContent.trim() === '关于开发者'){
+            var content = el.querySelector('.details-content');
+            if(content){
+                content.innerHTML =
+                    '<p><strong>DMR-ML 开发团队</strong></p>' +
+                    '<p>来自中国农业大学（CAU）</p>';
+            }
+        }
+    });
+    // 侧边栏底部版权
+    document.querySelectorAll('.sidebar-footer p').forEach(function(p){
+        if(p.innerHTML.indexOf('ykkai-w') !== -1){
+            p.innerHTML = '&copy; 2026 DMR-ML 开发团队';
+        }
+    });
+    // 页脚版权行
+    document.querySelectorAll('.site-footer p').forEach(function(p){
+        if(p.innerHTML.indexOf('ykkai-w') !== -1){
+            p.innerHTML = 'DMR-ML 机器学习量化交易系统 | &copy; 2026 DMR-ML 开发团队';
+        }
+    });
+    // 致使用者 — 替换落款
+    document.querySelectorAll('p.sign').forEach(function(p){
+        p.innerHTML = 'DMR-ML 开发团队<br>2026 年春';
+    });
+    // 致使用者正文中"我"→"团队"，"我们"保持不变（只处理明显个人语气的词）
+    // 管理入口旁加演示提示
+    document.querySelectorAll('.sidebar-details').forEach(function(el){
+        var summary = el.querySelector('summary');
+        if(summary && summary.textContent.trim() === '管理后台'){
+            var content = el.querySelector('.details-content');
+            if(content){
+                var hint = document.createElement('p');
+                hint.style.cssText = 'font-size:0.75rem;color:var(--text-muted);margin-top:8px;text-align:center;';
+                hint.textContent = '供演示 · 密码 12345';
+                content.appendChild(hint);
+            }
+        }
+    });
+})();
+</script>
+</body>
+</html>
