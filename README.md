@@ -2,7 +2,24 @@
 
 基于机器学习的双重动量指数轮动策略
 
-在线演示：[dmrml.cn](https://dmrml.cn)
+在线系统平台：[dmrml.cn](https://dmrml.cn)
+
+---
+
+感谢你的欣赏和订阅 🙏
+Thanks so much for your interest, and for subscribing 🙏
+
+这个仓库是 DMR-ML 的初版，一套双动量轮动 + 机器学习风险闸的完整实现，可以直接跑起来，供学习、交流，也欢迎同行和同好者参考。
+This repo is the first version of DMR-ML, a complete, runnable implementation of dual-momentum rotation with a machine-learning risk gate. It's here for learning and discussion, and I'd be glad if fellow quants and enthusiasts find it useful.
+
+往后我不再往这个仓库更新新版本代码了，所以网站上实际运行的模型，和这里开源的版本会慢慢有一些出入。但这个项目我一直当成一件长期打磨的事在做，自己也还在不断学习，时不时会试着改进它，想把它做得更好一点。
+Going forward I won't be pushing newer versions to this repo, so the model actually running on the website will gradually diverge a bit from the open-source version here. That said, I treat this as a project to refine over the long haul, I'm still learning, and I keep tinkering with it now and then, trying to make it a little better.
+
+但是！！！不需要完整代码，通过网站订阅，就能免费收到最新版模型的每日信号。如果你想更深入地聊聊新的思路，讨论代码和想法，或者有任何的建议或者想法！都非常非常欢迎发邮件联系我！
+But here's the thing!!! You don't need the full code, just subscribe on the website and you'll get the latest model's daily signals for free. And if you'd like to talk through new ideas, discuss the code, or share any suggestions or thoughts at all — I'd absolutely love to hear from you by email!
+
+2026.7.15
+Kai
 
 ---
 
